@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { BRAND } from "../../config/brand";
 import { Logo } from "./Navbar";
 
@@ -20,7 +21,7 @@ export default function Footer() {
         </div>
         <div className="mt-14 flex flex-col justify-between gap-2 border-t border-line pt-6 text-xs text-mute sm:flex-row">
           <p>© {new Date().getFullYear()} {BRAND.name} {BRAND.suffix}. All rights reserved.</p>
-          <a href="/admin" className="hover:text-bone">Staff login</a>
+          <Link to="/admin" className="hover:text-bone transition-colors">Staff login</Link>
         </div>
       </div>
     </footer>
