@@ -4,7 +4,7 @@ import { emptyState } from "./seed";
 
 // Data layer. Swap `load`/`persist` for Supabase queries + realtime channels
 // (see supabase/schema.sql). Other tabs are kept in sync via the `storage` event.
-const KEY = "respawn.db.v1";
+const KEY = "respawn.db.v2";
 
 /** Ensure every payment record has the playerId field (v2 migration) and PS5 auto rate is 60. */
 function migrateData(s: DbState): DbState {
