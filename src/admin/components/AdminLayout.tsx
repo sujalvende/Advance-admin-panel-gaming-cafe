@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
-import { BarChart3, CalendarCheck, Database, KeyRound, LogOut } from "lucide-react";
+import { BarChart3, CalendarCheck, Database, Download, KeyRound, LogOut, Trash2, Upload } from "lucide-react";
 import { BRAND } from "../../config/brand";
 import { signOut, useAuth } from "../../lib/auth";
 import { api } from "../../lib/api";
@@ -19,11 +19,46 @@ export default function AdminLayout() {
   const { toast, fromError } = useToast();
   const [reset, setReset] = useState<null | "demo" | "empty">(null);
   const [showCreds, setShowCreds] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!authed) return <Navigate to="/admin/login" replace state={{ from: loc.pathname }} />;
 
   const link = ({ isActive }: { isActive: boolean }) =>
     `flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors ${isActive ? "bg-bone text-ink" : "text-mute hover:text-bone"}`;
+
+  async function handleExport() {
+    try {
+      const dataStr = await api.exportBackup();
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gaming-cafe-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("success", "Backup downloaded");
+    } catch (e) {
+      fromError(e, "Backup failed");
+    }
+  }
+
+  function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target?.result as string;
+        await api.importBackup(text);
+        toast("success", "Backup restored successfully");
+      } catch (err) {
+        fromError(err, "Failed to restore backup");
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  }
 
   return (
     <div className="min-h-dvh pb-24 md:pb-10">
@@ -37,7 +72,41 @@ export default function AdminLayout() {
             {tabs.map((t) => <NavLink key={t.to} to={t.to} end={t.end} className={link}><t.icon className="size-4" />{t.label}</NavLink>)}
           </nav>
           <div className="flex items-center gap-1">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileImport}
+              accept=".json"
+              className="hidden"
+            />
             <Link to="/" className="btn btn-ghost btn-sm hidden sm:inline-flex">View site</Link>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon"
+              aria-label="Export backup"
+              title="Download full JSON database backup"
+              onClick={handleExport}
+            >
+              <Download className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon"
+              aria-label="Import backup"
+              title="Restore database from JSON backup"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon"
+              aria-label="Clear trial data"
+              title="Reset to fresh empty café"
+              onClick={() => setReset("empty")}
+            >
+              <Trash2 className="size-4 text-warn" />
+            </button>
             <button
               type="button"
               className="btn btn-ghost btn-icon"
@@ -51,7 +120,7 @@ export default function AdminLayout() {
               type="button"
               className="btn btn-ghost btn-icon"
               aria-label="Load demo data"
-              title="Load demo data"
+              title="Load demo data (optional sample data)"
               onClick={() => setReset("demo")}
             >
               <Database className="size-4" />

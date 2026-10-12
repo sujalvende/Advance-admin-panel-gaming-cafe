@@ -46,7 +46,7 @@ export const DEFAULT_GAMES: Game[] = [
 ];
 
 export const DEFAULT_RULES: PricingRule[] = [
-  { id: "r-ps5", stationType: "ps5", label: "PS5", rate: 300, unit: "hour", minMinutes: 10, groupRate: null, groupMinPlayers: 4, active: true },
+  { id: "r-ps5", stationType: "ps5", label: "PS5", rate: 60, unit: "hour", minMinutes: 10, groupRate: null, groupMinPlayers: 4, active: true },
   { id: "r-sim", stationType: "sim", label: "Sim Racing", rate: 500, unit: "hour", minMinutes: 15, groupRate: null, groupMinPlayers: 4, active: true },
   { id: "r-vr", stationType: "vr", label: "VR", rate: 0, unit: "hour", minMinutes: 0, groupRate: null, groupMinPlayers: 4, active: false },
 ];
@@ -124,8 +124,26 @@ export function seedState(): DbState {
       b.sessionEndedAt = new Date(`${date}T${endClock}:00`).toISOString();
       const online = rand() < 0.5 ? Math.round((total * (0.4 + rand() * 0.4)) / 10) * 10 : rand() < 0.5 ? total : 0;
       const pays: Payment[] = [];
-      if (online > 0) pays.push({ id: uid(), type: "online", amount: online, reference: `UPI${Math.floor(rand() * 1e8)}`, time: b.sessionEndedAt, notes: "" });
-      if (total - online > 0) pays.push({ id: uid(), type: "offline", amount: total - online, reference: "", time: b.sessionEndedAt, notes: "" });
+      if (online > 0)
+        pays.push({
+          id: uid(),
+          type: "online",
+          amount: online,
+          reference: `UPI${Math.floor(rand() * 1e8)}`,
+          time: b.sessionEndedAt,
+          notes: "",
+          playerId: null,
+        });
+      if (total - online > 0)
+        pays.push({
+          id: uid(),
+          type: "offline",
+          amount: total - online,
+          reference: "",
+          time: b.sessionEndedAt,
+          notes: "",
+          playerId: null,
+        });
       b.payments = pays;
       b.players.forEach((p) => { p.paymentStatus = "paid"; p.paymentMethod = online >= total ? "online" : "offline"; });
       b.status = "completed";
@@ -146,7 +164,7 @@ export function seedState(): DbState {
     live.source = "whatsapp"; live.status = "playing"; live.sessionStartedAt = ago.toISOString();
     live.players = ["Rahul", "Amit", "Karan", "Jay", "Rohan"].map((n) => player(n, ago.toISOString(), null, null));
     live.players[3].plannedMinutes = 10;
-    live.payments = [{ id: uid(), type: "online", amount: 300, reference: "UPI advance", time: ago.toISOString(), notes: "Advance" }];
+    live.payments = [{ id: uid(), type: "online", amount: 300, reference: "UPI advance", time: ago.toISOString(), notes: "Advance", playerId: null }];
     bookings.push(live);
     stations.find((s) => s.id === "ps5-2")!.status = "playing";
   }

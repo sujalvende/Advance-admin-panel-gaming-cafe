@@ -65,6 +65,7 @@ export interface Payment {
   reference: string;
   time: string;
   notes: string;
+  playerId: string | null; // null = booking-level / group payment
 }
 
 export interface Booking {

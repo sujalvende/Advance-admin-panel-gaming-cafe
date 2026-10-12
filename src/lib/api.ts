@@ -10,7 +10,7 @@ import type {
 } from "./types";
 import { getState, mutate, setState } from "./store";
 import { findConflicts } from "./conflicts";
-import { bookingTotals, calcAmount, playerMinutes, ruleFor } from "./pricing";
+import { allPlayersPaymentInfo, bookingTotals, calcAmount, playerMinutes, playerPaymentInfo, ruleFor } from "./pricing";
 import { emptyState, seedState, uid } from "./seed";
 import { toMs, todayStr } from "./time";
 
@@ -263,6 +263,33 @@ export const api = {
             ? calcAmount(playerMinutes(b, p, Date.now()), ruleFor(s.rules, type), b.players.length)
             : null;
         }
+
+        // Keep booking payments aligned when a player's individual payment is modified
+        if (patch.paymentStatus !== undefined || patch.paymentMethod !== undefined) {
+          if (p.paymentStatus === "paid") {
+            // Payment method is required when marking a player as paid
+            if (!p.paymentMethod) fail("Please select a payment method for this player.");
+            const playerDue = p.amount ?? calcAmount(playerMinutes(b, p, Date.now()), ruleFor(s.rules, s.stations.find((x) => x.id === b.stationId)?.type ?? "ps5"), b.players.length);
+            const existingPays = b.payments.filter((pay) => pay.playerId === p.id);
+            const alreadyAllocated = existingPays.reduce((sum, pay) => sum + pay.amount, 0);
+            const needed = playerDue - alreadyAllocated;
+            if (needed > 0) {
+              b.payments.push({
+                id: uid(),
+                type: p.paymentMethod,
+                amount: needed,
+                reference: `Player: ${p.name}`,
+                time: new Date().toISOString(),
+                notes: `Paid by ${p.name}`,
+                playerId: p.id,
+              });
+            }
+          } else if (p.paymentStatus === "unpaid") {
+            // Remove any player-specific payments if changed back to unpaid
+            b.payments = b.payments.filter((pay) => pay.playerId !== p.id);
+            p.paymentMethod = null;
+          }
+        }
       }),
     ),
 
@@ -276,19 +303,42 @@ export const api = {
       }),
     ),
 
-  addPayment: (id: string, input: { online: number; offline: number; reference: string; notes: string }) =>
+  addPayment: (
+    id: string,
+    input: {
+      online: number;
+      offline: number;
+      reference: string;
+      notes: string;
+      playerId?: string | null;
+    },
+  ) =>
     run(() => {
-      const { online, offline } = input;
+      const { online, offline, playerId } = input;
+      // Server-side validation: amounts must be non-negative finite numbers
       if (![online, offline].every((n) => Number.isFinite(n) && n >= 0)) fail("Amounts can't be negative.");
-      if (online + offline <= 0) fail("Enter an amount to record.");
+      // At least one method must have a positive amount
+      if (online + offline <= 0) fail("Enter an amount to record — select Online, Cash, or Both.");
       mutate((s) => {
         const b = find(s, id);
+        if (playerId && !b.players.some((p) => p.id === playerId)) {
+          fail("Selected player does not exist in this booking.");
+        }
         const t = bookingTotals(b, s.rules, s.stations, Date.now());
         if (online + offline > t.remaining + 0.001 && t.total > 0)
           fail(`That's more than the ₹${t.remaining} remaining.`);
         const time = new Date().toISOString();
         const mk = (type: PayType, amount: number) =>
-          amount > 0 && b.payments.push({ id: uid(), type, amount, reference: input.reference.trim().slice(0, 80), time, notes: input.notes.trim().slice(0, 200) });
+          amount > 0 &&
+          b.payments.push({
+            id: uid(),
+            type,
+            amount,
+            reference: input.reference.trim().slice(0, 80),
+            time,
+            notes: input.notes.trim().slice(0, 200),
+            playerId: playerId ?? null,
+          });
         mk("online", online);
         mk("offline", offline);
         b.refunded = false;
@@ -308,10 +358,19 @@ export const api = {
           fail("Every player needs valid start and end times.");
         const t = bookingTotals(b, s.rules, s.stations, Date.now());
         b.finalTotal = t.total;
+        const dominantMethod: PayType = t.online >= t.offline ? "online" : "offline";
+        const allInfo = allPlayersPaymentInfo(b, s.rules, s.stations, Date.now());
         b.players.forEach((p) => {
-          const full = t.remaining <= 0;
-          p.paymentStatus = full ? "paid" : "unpaid";
-          p.paymentMethod = full ? (t.online >= t.offline ? "online" : "offline") : null;
+          const info = allInfo.get(p.id);
+          // 1. Never reset a previously paid player to unpaid
+          // 2. Automatically derive status based on exact allocations
+          if (p.paymentStatus === "paid" || info?.status === "paid") {
+            p.paymentStatus = "paid";
+            p.paymentMethod = info?.method ?? p.paymentMethod ?? dominantMethod;
+          } else {
+            p.paymentStatus = "unpaid";
+            p.paymentMethod = info?.method ?? null;
+          }
         });
         b.status = "completed";
         b.completedAt = new Date().toISOString();
@@ -338,6 +397,26 @@ export const api = {
 
   resetData: (mode: "demo" | "empty") =>
     run(() => setState(mode === "demo" ? seedState() : emptyState())),
+
+  exportBackup: () =>
+    run(() => {
+      const s = getState();
+      return JSON.stringify(s, null, 2);
+    }),
+
+  importBackup: (jsonString: string) =>
+    run(() => {
+      try {
+        const parsed = JSON.parse(jsonString) as DbState;
+        if (!parsed || !Array.isArray(parsed.bookings) || !Array.isArray(parsed.stations) || !Array.isArray(parsed.rules)) {
+          fail("Invalid backup file format.");
+        }
+        setState(parsed);
+      } catch (e) {
+        if (e instanceof ApiError) throw e;
+        fail("Failed to parse JSON backup file.");
+      }
+    }),
 };
 
 export const todayISO = todayStr;

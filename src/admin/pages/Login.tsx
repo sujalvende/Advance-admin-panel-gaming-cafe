@@ -96,16 +96,18 @@ export default function Login() {
         </form>
 
         <div className="mt-5 rounded-2xl border border-dashed border-line p-4 text-xs leading-relaxed text-mute">
-          <div className="flex items-center gap-1.5 font-semibold text-bone">
-            <KeyRound className="size-3.5 text-ember" /> Saved in localStorage:
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 font-semibold text-bone">
+              <KeyRound className="size-3.5 text-ember" /> Default Admin Credentials:
+            </span>
           </div>
-          <p className="mt-1">
+          <p className="mt-1.5">
             Email: <span className="font-mono text-bone">{creds.email}</span>
             <br />
             Password: <span className="font-mono text-bone">{creds.password}</span>
           </p>
           <p className="mt-2 text-[0.7rem] text-mute/80">
-            Sessions and credentials persist in your browser's <span className="font-mono">localStorage</span>. You can change them anytime from the admin toolbar.
+            For demonstration & trial testing. You can customize credentials anytime from the admin toolbar.
           </p>
         </div>
       </div>

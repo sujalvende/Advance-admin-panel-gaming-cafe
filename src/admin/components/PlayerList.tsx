@@ -5,11 +5,13 @@ import { api } from "../../lib/api";
 import { useToast } from "../../components/ui/Toast";
 import PlayerRow from "./PlayerRow";
 import PlayerModal from "./PlayerModal";
+import PaymentModal from "./PaymentModal";
 
 export default function PlayerList({ booking }: { booking: Booking }) {
   const { toast, fromError } = useToast();
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<{ player: Player | null } | null>(null);
+  const [payPlayerId, setPayPlayerId] = useState<string | null>(null);
   const locked = booking.status === "completed";
   const canAdd = !locked && !booking.sessionEndedAt;
 
@@ -30,11 +32,19 @@ export default function PlayerList({ booking }: { booking: Booking }) {
         {booking.players.map((p, i) => (
           <PlayerRow key={p.id} booking={booking} player={p} index={i} locked={locked} busy={busy}
             onEdit={() => setModal({ player: p })}
+            onPay={() => setPayPlayerId(p.id)}
             onStop={() => act(() => api.endPlayer(booking.id, p.id), `${p.name} stopped`)}
             onRemove={() => act(() => api.removePlayer(booking.id, p.id), "Player removed")} />
         ))}
       </ul>
       {modal && <PlayerModal booking={booking} player={modal.player} onClose={() => setModal(null)} />}
+      {payPlayerId && (
+        <PaymentModal
+          booking={booking}
+          initialPlayerId={payPlayerId}
+          onClose={() => setPayPlayerId(null)}
+        />
+      )}
     </section>
   );
 }

@@ -1,14 +1,29 @@
-import { Pencil, Square, Trash2 } from "lucide-react";
+import { Pencil, Square, Trash2, Wallet } from "lucide-react";
 import type { Booking, Player } from "../../lib/types";
 import { useDb, useNow } from "../../lib/store";
-import { playerAmount, playerMinutes, ruleFor, effectiveRate } from "../../lib/pricing";
+import { playerAmount, playerMinutes, playerPaymentInfo, ruleFor, effectiveRate } from "../../lib/pricing";
 import { fmtClock, fmtDur, fmtINR } from "../../lib/time";
 
 export default function PlayerRow({
-  booking, player, index, locked, busy, onEdit, onRemove, onStop,
+  booking,
+  player,
+  index,
+  locked,
+  busy,
+  onEdit,
+  onRemove,
+  onStop,
+  onPay,
 }: {
-  booking: Booking; player: Player; index: number; locked: boolean; busy: boolean;
-  onEdit: () => void; onRemove: () => void; onStop: () => void;
+  booking: Booking;
+  player: Player;
+  index: number;
+  locked: boolean;
+  busy: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+  onStop: () => void;
+  onPay?: () => void;
 }) {
   const { rules, stations } = useDb();
   const now = useNow(booking.status === "playing" && !booking.sessionEndedAt ? 15000 : 600000);
@@ -18,6 +33,15 @@ export default function PlayerRow({
   const rate = player.rate ?? effectiveRate(ruleFor(rules, type), booking.players.length);
   const running = !!player.startTime && !player.endTime && booking.status === "playing" && !booking.sessionEndedAt;
   const estimate = !player.startTime && !player.endTime;
+
+  // Derive live payment status from actual payment records — never use stale player.paymentStatus flag
+  const info = playerPaymentInfo(booking, player, rules, stations, now);
+  const isPaid = info.status === "paid" && amount > 0;
+  const isPartial = info.allocated > 0 && info.remaining > 0;
+  const methodLabel =
+    info.method === "online" ? "Online" :
+    info.method === "offline" ? "Cash" :
+    null;
 
   return (
     <li className="rounded-2xl border border-line bg-ink p-3.5 sm:p-4">
@@ -36,13 +60,28 @@ export default function PlayerRow({
         </div>
         <p className="shrink-0 text-right">
           <span className="block font-mono text-lg font-semibold tabular-nums">{fmtINR(amount)}</span>
-          {player.paymentStatus === "paid" && <span className="text-xs text-ok">Paid</span>}
+          {isPaid && (
+            <span className="text-xs text-ok">
+              Paid{methodLabel ? ` · ${methodLabel}` : ""}
+            </span>
+          )}
+          {isPartial && (
+            <span className="text-xs text-warn">
+              Partial · {fmtINR(info.allocated)} paid
+            </span>
+          )}
+          {!isPaid && !isPartial && amount > 0 && (
+            <span className="text-xs text-bad">Unpaid</span>
+          )}
         </p>
       </div>
       {!locked && (
         <div className="mt-3 flex flex-wrap gap-2">
           {running && (
             <button type="button" disabled={busy} onClick={onStop} className="btn btn-soft btn-sm"><Square className="size-3.5" /> Stop {player.name.split(" ")[0]}</button>
+          )}
+          {onPay && !isPaid && (
+            <button type="button" onClick={onPay} className="btn btn-ghost btn-sm text-ember"><Wallet className="size-3.5" /> Pay</button>
           )}
           <button type="button" onClick={onEdit} className="btn btn-ghost btn-sm"><Pencil className="size-3.5" /> Edit</button>
           <button type="button" disabled={busy || booking.players.length <= 1} onClick={onRemove} className="btn btn-ghost btn-sm text-bad"><Trash2 className="size-3.5" /> Remove</button>

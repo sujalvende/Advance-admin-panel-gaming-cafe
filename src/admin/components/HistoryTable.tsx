@@ -23,7 +23,15 @@ function PlayerTable({ r }: { r: Row }) {
                   <td className="px-3 text-mute">{fmtClock(p.startTime)} – {fmtClock(p.endTime)}</td>
                   <td className="px-3">{fmtDur(mins)}</td>
                   <td className="px-3 text-right font-mono">{fmtINR(p.amount ?? 0)}</td>
-                  <td className="pl-3 text-mute">{p.paymentMethod ? (p.paymentMethod === "online" ? "Online" : "Cash") : p.paymentStatus === "paid" ? "Paid" : "—"}</td>
+                  <td className="pl-3 font-medium">
+                    {p.paymentStatus === "paid" ? (
+                      <span className="text-ok">
+                        Paid{p.paymentMethod ? ` · ${p.paymentMethod === "online" ? "Online" : "Cash"}` : ""}
+                      </span>
+                    ) : (
+                      <span className="text-bad/80">Unpaid</span>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -77,7 +85,18 @@ export default function HistoryTable({ rows, onRestore }: { rows: Row[]; onResto
                 <li className="bg-panel2/50 px-4 py-4 sm:px-5">
                   {b.status === "completed" ? <PlayerTable r={r} /> : <p className="text-sm text-mute">{b.status === "noshow" ? "Customer did not arrive. Kept for booking-loss tracking." : "Booking was cancelled."}{b.notes && ` Notes: ${b.notes}`}</p>}
                   {b.status === "completed" && b.payments.length > 0 && (
-                    <ul className="mt-3 text-xs text-mute">{b.payments.map((p) => <li key={p.id}>{p.type === "online" ? "Online" : "Cash"} {fmtINR(p.amount)}{p.reference && ` · ${p.reference}`}</li>)}</ul>
+                    <ul className="mt-3 text-xs text-mute">
+                      {b.payments.map((p) => {
+                        const targetPlayer = p.playerId ? b.players.find((pl) => pl.id === p.playerId) : null;
+                        return (
+                          <li key={p.id}>
+                            {p.type === "online" ? "Online" : "Cash"} {fmtINR(p.amount)}
+                            {targetPlayer ? ` · for ${targetPlayer.name}` : " · Group"}
+                            {p.reference && ` · Ref: ${p.reference}`}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
                   {onRestore && <button type="button" className="btn btn-ghost btn-sm mt-3" onClick={() => onRestore(b.id)}><RotateCcw className="size-3.5" /> Restore</button>}
                 </li>

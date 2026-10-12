@@ -48,6 +48,7 @@ export interface Totals {
   offline: number;
   paid: number;
   remaining: number;
+  overpaid: number;
   playerMinutes: number;
   status: "unpaid" | "partial" | "paid" | "refunded";
 }
@@ -65,6 +66,7 @@ export function bookingTotals(
   const offline = b.payments.filter((p) => p.type === "offline").reduce((s, p) => s + p.amount, 0);
   const paid = online + offline;
   const remaining = Math.max(0, total - paid);
+  const overpaid = Math.max(0, paid - total);
   const status = b.refunded
     ? "refunded"
     : paid <= 0
@@ -78,7 +80,138 @@ export function bookingTotals(
     offline,
     paid,
     remaining,
+    overpaid,
     status,
     playerMinutes: b.players.reduce((s, p) => s + playerMinutes(b, p, now), 0),
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Per-player payment breakdown from actual Payment records          */
+/* ------------------------------------------------------------------ */
+
+export interface PlayerPayInfo {
+  charge: number;
+  allocated: number;
+  online: number;
+  offline: number;
+  remaining: number;
+  status: "unpaid" | "paid";
+  method: "online" | "offline" | null;
+}
+
+/** Calculate all players' payment info, attributing direct payments to specific players
+ *  and allocating group payments (where playerId is null) to players with unmet charges. */
+export function allPlayersPaymentInfo(
+  b: Booking,
+  rules: PricingRule[],
+  stations: Station[],
+  now: number,
+): Map<string, PlayerPayInfo> {
+  const map = new Map<
+    string,
+    {
+      charge: number;
+      directOnline: number;
+      directOffline: number;
+      directTotal: number;
+      unmet: number;
+    }
+  >();
+
+  for (const p of b.players) {
+    const charge = playerAmount(b, p, rules, stations, now);
+    const pays = b.payments.filter((pay) => pay.playerId === p.id);
+    const directOnline = pays.filter((pay) => pay.type === "online").reduce((s, pay) => s + pay.amount, 0);
+    const directOffline = pays.filter((pay) => pay.type === "offline").reduce((s, pay) => s + pay.amount, 0);
+    const directTotal = directOnline + directOffline;
+    const unmet = Math.max(0, charge - directTotal);
+    map.set(p.id, { charge, directOnline, directOffline, directTotal, unmet });
+  }
+
+  // Group / unallocated payments (where playerId is null)
+  const groupPays = b.payments.filter((pay) => !pay.playerId);
+  let groupOnlineRem = groupPays.filter((pay) => pay.type === "online").reduce((s, pay) => s + pay.amount, 0);
+  let groupOfflineRem = groupPays.filter((pay) => pay.type === "offline").reduce((s, pay) => s + pay.amount, 0);
+
+  const result = new Map<string, PlayerPayInfo>();
+
+  for (const p of b.players) {
+    const data = map.get(p.id)!;
+    let groupAllocOnline = 0;
+    let groupAllocOffline = 0;
+    let needed = data.unmet;
+
+    if (needed > 0 && groupOnlineRem > 0) {
+      const take = Math.min(needed, groupOnlineRem);
+      groupAllocOnline += take;
+      groupOnlineRem -= take;
+      needed -= take;
+    }
+
+    if (needed > 0 && groupOfflineRem > 0) {
+      const take = Math.min(needed, groupOfflineRem);
+      groupAllocOffline += take;
+      groupOfflineRem -= take;
+      needed -= take;
+    }
+
+    const totalOnline = data.directOnline + groupAllocOnline;
+    const totalOffline = data.directOffline + groupAllocOffline;
+    const allocated = totalOnline + totalOffline;
+    const remaining = Math.max(0, data.charge - allocated);
+
+    // If session is already completed or player was already paid, preserve paid status
+    const isExplicitlyPaid = (b.status === "completed" || b.sessionEndedAt) && p.paymentStatus === "paid";
+    const status: "unpaid" | "paid" =
+      data.charge <= 0 || allocated >= data.charge || isExplicitlyPaid ? "paid" : "unpaid";
+
+    const method: "online" | "offline" | null =
+      allocated > 0
+        ? totalOnline >= totalOffline
+          ? "online"
+          : "offline"
+        : isExplicitlyPaid
+          ? p.paymentMethod ?? null
+          : null;
+
+    result.set(p.id, {
+      charge: data.charge,
+      allocated,
+      online: totalOnline,
+      offline: totalOffline,
+      remaining,
+      status,
+      method,
+    });
+  }
+
+  return result;
+}
+
+/** Calculate a single player's payment info from allocated Payment records. */
+export function playerPaymentInfo(
+  b: Booking,
+  p: Player,
+  rules: PricingRule[],
+  stations: Station[],
+  now: number,
+  _bookingFullyPaid = false,
+): PlayerPayInfo {
+  const all = allPlayersPaymentInfo(b, rules, stations, now);
+  const found = all.get(p.id);
+  if (found) return found;
+
+  const charge = playerAmount(b, p, rules, stations, now);
+  return {
+    charge,
+    allocated: 0,
+    online: 0,
+    offline: 0,
+    remaining: charge,
+    status: charge <= 0 ? "paid" : "unpaid",
+    method: null,
+  };
+}
+
+
