@@ -1,7 +1,7 @@
 // Temporary brand identity. Replace these values to rebrand the whole site.
 export const BRAND = {
-  name: "Respawn",
-  suffix: "Gaming Lounge",
+  name: "PS PRO",
+  suffix: "Gaming",
   tagline: "Press start. Stay a while.",
   city: "Your City",
   address: "12 Arcade Lane, Your City",

@@ -59,7 +59,7 @@ export default function Dashboard() {
     const head = ["Booking", "Date", "Start", "End", "Customer", "Phone", "Players", "Station", "Game", "Source", "Status", "Player-minutes", "Total", "Online", "Cash", "Remaining"];
     const lines = rows.map((r) => [r.b.no, r.b.date, fmtTime(r.b.startTime), fmtTime(endClock(r.b)), r.b.customerName, r.b.phone, r.b.players.length, r.stationName, r.gameTitle, SOURCE_LABEL[r.b.source], STATUS_LABEL[r.b.status], r.t.playerMinutes, r.t.total, r.t.online, r.t.offline, r.t.remaining].map(csvEscape).join(","));
     const url = URL.createObjectURL(new Blob([[head.map(csvEscape).join(","), ...lines].join("\n")], { type: "text/csv" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: `respawn-history-${from}-to-${to}.csv` });
+    const a = Object.assign(document.createElement("a"), { href: url, download: `pspro-history-${from}-to-${to}.csv` });
     a.click();
     URL.revokeObjectURL(url);
   }
