@@ -4,15 +4,32 @@ import { BRAND } from "../../config/brand";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
-    <a href="#home" className={`flex items-center gap-2.5 ${className}`} aria-label={`${BRAND.name} home`}>
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ember text-ink">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M6 4v16M6 4h7a4.5 4.5 0 0 1 0 9H6M12 13l6 7" />
+    <a href="#home" className={`group flex items-center gap-3 ${className}`} aria-label={`${BRAND.name} home`}>
+      {/* Logo mark */}
+      <span className="relative grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-ember to-[#e84e1e] shadow-[0_0_18px_rgba(255,106,61,0.35)] transition-shadow duration-300 group-hover:shadow-[0_0_24px_rgba(255,106,61,0.55)]">
+        <svg viewBox="0 0 40 40" className="size-6" aria-hidden>
+          <defs>
+            <linearGradient id="pGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#0c0b0a" />
+              <stop offset="100%" stopColor="#1a1612" />
+            </linearGradient>
+          </defs>
+          {/* Bold geometric P */}
+          <path
+            d="M11 6h12a9 9 0 0 1 0 18H18v10h-7V6z"
+            fill="url(#pGrad)"
+          />
+          {/* Inner counter of the P */}
+          <rect x="18" y="12" width="4.5" height="6" rx="2" fill="#ff6a3d" />
+          {/* Gaming accent — small triangle play icon in lower-right */}
+          <polygon points="28,30 28,37 34,33.5" fill="#0c0b0a" opacity="0.6" />
         </svg>
       </span>
+
+      {/* Brand text */}
       <span className="leading-none">
-        <span className="display block text-2xl">{BRAND.name}</span>
-        <span className="block font-mono text-[0.6rem] uppercase tracking-[0.22em] text-mute">{BRAND.suffix}</span>
+        <span className="display block text-[1.65rem] tracking-tight">{BRAND.name}</span>
+        <span className="block font-mono text-[0.58rem] uppercase tracking-[0.25em] text-mute">{BRAND.suffix}</span>
       </span>
     </a>
   );
