@@ -9,21 +9,21 @@ import {
   type Notification,
   type NotifLevel,
 } from "../../lib/notifications";
-import NotificationSettings from "./NotificationSettings";
+import NotificationSettings from "./NotificationSettings.tsx";
 
 function levelIcon(level: NotifLevel) {
   switch (level) {
     case "critical": return <AlertCircle className="size-4 shrink-0 text-bad" aria-hidden />;
-    case "warning":  return <AlertTriangle className="size-4 shrink-0 text-warn" aria-hidden />;
-    default:         return <Info className="size-4 shrink-0 text-sky-400" aria-hidden />;
+    case "warning": return <AlertTriangle className="size-4 shrink-0 text-warn" aria-hidden />;
+    default: return <Info className="size-4 shrink-0 text-sky-400" aria-hidden />;
   }
 }
 
 function levelBg(level: NotifLevel) {
   switch (level) {
     case "critical": return "border-l-bad/60";
-    case "warning":  return "border-l-warn/60";
-    default:         return "border-l-sky-400/60";
+    case "warning": return "border-l-warn/60";
+    default: return "border-l-sky-400/60";
   }
 }
 
@@ -128,6 +128,15 @@ export default function NotificationBell() {
         )}
       </button>
 
+      {/* Mobile backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs sm:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Dropdown panel */}
       {open && (
         <div
@@ -135,17 +144,24 @@ export default function NotificationBell() {
           role="dialog"
           aria-label="Notifications"
           id="notif-panel"
-          className="absolute right-0 top-full z-50 mt-2 flex w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-line bg-ink shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-top-2 duration-150"
+          className="fixed inset-x-3 top-16 z-50 flex max-h-[80vh] max-w-md mx-auto flex-col overflow-hidden rounded-2xl border border-line bg-ink shadow-2xl shadow-black/80 animate-in fade-in slide-in-from-top-2 duration-150 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[22rem] sm:max-h-none sm:max-w-[calc(100vw-2rem)]"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <span className="font-semibold text-sm">Notifications</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm">Notifications</span>
+              {unread > 0 && (
+                <span className="rounded-full bg-bad/20 px-1.5 py-0.5 text-[0.65rem] font-bold text-bad tabular-nums">
+                  {unread} new
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1">
               {notifs.length > 0 && (
                 <>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-icon h-7 w-7"
+                    className="inline-flex size-7 items-center justify-center rounded-lg border border-line text-mute hover:border-line hover:bg-panel2 hover:text-bone transition-colors"
                     aria-label="Mark all read"
                     title="Mark all as read"
                     onClick={markAllRead}
@@ -154,7 +170,7 @@ export default function NotificationBell() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-ghost btn-icon h-7 w-7"
+                    className="inline-flex size-7 items-center justify-center rounded-lg border border-line text-mute hover:border-line hover:bg-panel2 hover:text-warn transition-colors"
                     aria-label="Clear all notifications"
                     title="Clear all"
                     onClick={clearAll}
@@ -165,7 +181,7 @@ export default function NotificationBell() {
               )}
               <button
                 type="button"
-                className="btn btn-ghost btn-icon h-7 w-7"
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-line text-mute hover:border-line hover:bg-panel2 hover:text-bone transition-colors"
                 aria-label="Notification settings"
                 title="Notification settings"
                 onClick={() => { setShowSettings(true); setOpen(false); }}
@@ -174,7 +190,7 @@ export default function NotificationBell() {
               </button>
               <button
                 type="button"
-                className="btn btn-ghost btn-icon h-7 w-7"
+                className="inline-flex size-7 items-center justify-center rounded-lg border border-line text-mute hover:border-line hover:bg-panel2 hover:text-bone transition-colors"
                 aria-label="Close notifications"
                 onClick={() => setOpen(false)}
               >

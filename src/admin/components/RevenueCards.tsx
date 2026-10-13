@@ -11,9 +11,9 @@ export function KpiRow({ s }: { s: Summary }) {
   return (
     <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {items.map(([l, v]) => (
-        <div key={l} className="card px-5 py-5">
-          <dt className="text-xs font-semibold uppercase tracking-widest text-mute">{l}</dt>
-          <dd className="display mt-1 text-5xl sm:text-6xl">{v}</dd>
+        <div key={l} className="card p-4 sm:p-5 overflow-hidden">
+          <dt className="text-[0.65rem] sm:text-xs font-semibold uppercase tracking-widest text-mute">{l}</dt>
+          <dd className="display mt-1 text-2xl sm:text-4xl lg:text-5xl xl:text-6xl tabular-nums truncate" title={v}>{v}</dd>
         </div>
       ))}
     </dl>

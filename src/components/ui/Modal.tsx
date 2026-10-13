@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, X } from "lucide-react";
 
 export function Modal({
@@ -37,7 +38,9 @@ export function Modal({
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
@@ -56,7 +59,8 @@ export function Modal({
         <div className="overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
         {footer && <footer className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end sm:px-6">{footer}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

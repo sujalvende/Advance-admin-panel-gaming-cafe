@@ -72,8 +72,8 @@ export default function BookingManagement() {
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
-          <h1 className="display mt-1 text-5xl sm:text-6xl">Today's overview</h1>
+          <p className="eyebrow text-xs sm:text-sm">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
+          <h1 className="display mt-1 text-4xl sm:text-5xl md:text-6xl">Today's overview</h1>
         </div>
         <div className="flex gap-2">
           <button type="button" className="btn btn-ghost" onClick={() => setPricing(true)}><IndianRupee className="size-4" /> Pricing</button>
@@ -81,11 +81,11 @@ export default function BookingManagement() {
         </div>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:grid-cols-5">
         {tiles.map(([l, v, c], i) => (
-          <div key={l} className={`card px-4 py-4 ${i === 4 ? "col-span-2 lg:col-span-1" : ""}`}>
-            <dt className="text-xs font-semibold uppercase tracking-widest text-mute">{l}</dt>
-            <dd className={`display mt-1 text-4xl sm:text-5xl ${c}`}>{v}</dd>
+          <div key={l} className={`card overflow-hidden px-3 py-3 sm:px-4 sm:py-4 ${i === 4 ? "col-span-2 lg:col-span-1" : ""}`}>
+            <dt className="text-[0.6rem] font-semibold uppercase tracking-widest text-mute sm:text-xs">{l}</dt>
+            <dd className={`display mt-1 text-2xl sm:text-4xl md:text-5xl tabular-nums truncate ${c}`} title={v}>{v}</dd>
           </div>
         ))}
       </dl>
@@ -114,7 +114,7 @@ export default function BookingManagement() {
       </Section>
 
       <button type="button" onClick={() => setAdding(true)} aria-label="Add booking"
-        className="btn btn-primary btn-lg fixed bottom-[4.9rem] right-4 z-30 shadow-2xl shadow-black/60 md:hidden">
+        className="btn btn-primary btn-lg fixed bottom-20 right-4 z-20 shadow-2xl shadow-black/60 md:hidden">
         <CalendarPlus className="size-5" /> Add Booking
       </button>
 
