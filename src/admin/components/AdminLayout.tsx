@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { BarChart3, CalendarCheck, Database, Download, KeyRound, LogOut, Trash2, Upload } from "lucide-react";
 import { BRAND } from "../../config/brand";
+import logoImg from "../../assets/logo.jpg";
 import { signOut, useAuth } from "../../lib/auth";
 import { api } from "../../lib/api";
 import { ConfirmModal } from "../../components/ui/Modal";
@@ -66,7 +67,7 @@ export default function AdminLayout() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/" className="group flex items-center gap-3" title="Go to main website">
             <img
-              src="/logo.jpg"
+              src={logoImg}
               alt="PS PRO Gaming"
               className="size-9 rounded-lg object-contain shadow-[0_0_10px_rgba(0,200,255,0.3)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_16px_rgba(0,200,255,0.65)]"
             />

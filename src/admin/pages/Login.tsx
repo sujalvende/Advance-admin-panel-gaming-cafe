@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { KeyRound, Sparkles } from "lucide-react";
 import { BRAND } from "../../config/brand";
+import logoImg from "../../assets/logo.jpg";
 import { getCredentials, signIn, useAuth } from "../../lib/auth";
 import { BusyButton } from "../../components/ui/Modal";
 
@@ -40,7 +41,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <Link to="/" className="group flex flex-col items-center text-center">
           <img
-            src="/logo.jpg"
+            src={logoImg}
             alt="PS PRO Gaming"
             className="size-20 rounded-2xl object-contain shadow-[0_0_25px_rgba(0,200,255,0.35)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_35px_rgba(0,200,255,0.65)] mb-3"
           />

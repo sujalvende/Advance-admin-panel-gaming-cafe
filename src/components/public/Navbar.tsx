@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { BRAND } from "../../config/brand";
+import logoImg from "../../assets/logo.jpg";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <a href="#home" className={`group flex items-center gap-3 ${className}`} aria-label={`${BRAND.name} ${BRAND.suffix} home`}>
       <img
-        src="/logo.jpg"
+        src={logoImg}
         alt={`${BRAND.name} ${BRAND.suffix}`}
         className="size-11 rounded-xl object-contain shadow-[0_0_15px_rgba(0,200,255,0.25)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_22px_rgba(0,200,255,0.65)]"
       />
