@@ -63,7 +63,20 @@ A modern, production-ready web application and management system built for high-
 
 ---
 
-### ⚙️ 5. Administrative Utilities & Data Portability
+### 🔔 5. Session-End Notification System
+- **Notification Bell in Admin Header**: Always-visible bell icon with a live red unread-count badge.
+- **In-App Notification Center**: Dropdown panel listing all alerts newest-first with per-notification dismiss and mark-all-read.
+- **Automatic Session Expiry Detection**: Polls active sessions every 10 seconds; fires a **"Session Time Over"** critical alert the moment a booking's allotted time expires.
+- **1-Minute Advance Warning**: Fires a **"1 Minute Remaining"** warning alert in the last 60 seconds of a session, giving the owner time to act before the timer hits zero.
+- **Duplicate Prevention**: Each alert type fires at most once per session per page load via unique dedup keys — no repeated noise.
+- **Browser Desktop Notifications**: Optional system-level alerts that appear even when the admin tab is in the background (requires one-time browser permission grant).
+- **Web Audio API Sound Chime**: Synthesized two-tone alert sound — no external audio files required. Fully toggleable with a volume slider and an in-settings **Test Sound** button.
+- **Persistent Settings**: All notification preferences (in-app, desktop, sound, 1-min warning, volume) survive page refreshes and sync across browser tabs via `localStorage`.
+- **Status-Coded Alerts**: Critical (red), Warning (amber), and Info (blue) severity levels with matching icons and card colors.
+
+---
+
+### ⚙️ 6. Administrative Utilities & Data Portability
 - **JSON Database Backup & Restore**: One-click database export to JSON and instant restore from file.
 - **Seed Data Management**: Fast reset to realistic demo data for testing, or wipe to a clean blank state.
 - **Pricing Rule Engine**: Configurable base hourly rates, group minimum player thresholds, and minimum billing increments per station type.
@@ -94,16 +107,18 @@ A modern, production-ready web application and management system built for high-
 ├── src/
 │   ├── admin/                 # Admin management system
 │   │   ├── components/        # Admin UI modules
-│   │   │   ├── AdminLayout.tsx       # Header, navigation, backup/restore bar
-│   │   │   ├── BookingCard.tsx       # Core booking lifecycle & timer card
-│   │   │   ├── BookingFormModal.tsx  # Add / edit / reschedule booking modal
-│   │   │   ├── CredentialsModal.tsx  # Change admin username & password
-│   │   │   ├── HistoryTable.tsx      # Archive table of completed sessions
-│   │   │   ├── PaymentModal.tsx      # Split payment & allocation modal
-│   │   │   ├── PlayerList.tsx        # Per-player timing & status list
-│   │   │   ├── PricingModal.tsx      # Station hourly rates editor
-│   │   │   ├── SessionTimer.tsx      # Live timer display & controls
-│   │   │   └── StatusBadge.tsx       # Color-coded status pills
+│   │   │   ├── AdminLayout.tsx          # Header, navigation, notification bell, backup/restore bar
+│   │   │   ├── BookingCard.tsx          # Core booking lifecycle & timer card
+│   │   │   ├── BookingFormModal.tsx     # Add / edit / reschedule booking modal
+│   │   │   ├── CredentialsModal.tsx     # Change admin username & password
+│   │   │   ├── HistoryTable.tsx         # Archive table of completed sessions
+│   │   │   ├── NotificationBell.tsx     # Bell icon, unread badge & notification dropdown
+│   │   │   ├── NotificationSettings.tsx # Notification preferences modal
+│   │   │   ├── PaymentModal.tsx         # Split payment & allocation modal
+│   │   │   ├── PlayerList.tsx           # Per-player timing & status list
+│   │   │   ├── PricingModal.tsx         # Station hourly rates editor
+│   │   │   ├── SessionTimer.tsx         # Live timer display & controls
+│   │   │   └── StatusBadge.tsx          # Color-coded status pills
 │   │   └── pages/
 │   │       ├── BookingManagement.tsx # Active bookings & live stations view
 │   │       ├── History.tsx           # Financial charts & session history
@@ -130,6 +145,7 @@ A modern, production-ready web application and management system built for high-
 │   │   ├── api.ts             # Transactional state API layer
 │   │   ├── auth.ts            # Staff auth & session state
 │   │   ├── conflicts.ts       # Booking conflict & overlap detection
+│   │   ├── notifications.ts   # Notification store, settings, sound & expiry watcher
 │   │   ├── pricing.ts         # Dynamic pricing & prorated player calculations
 │   │   ├── seed.ts            # Default seed data and factory helpers
 │   │   ├── store.ts           # Reactive state container with multi-tab sync
@@ -176,8 +192,8 @@ Default staff credentials for testing the management panel:
 | Field | Value |
 |---|---|
 | **Admin URL** | `/admin` or `/admin/login` |
-| **Email** | `owner@respawn.example` |
-| **Password** | `respawn-admin` |
+| **Login ID** | `shubhampspro` |
+| **Password** | `shubham123` |
 
 *(Credentials can be updated anytime inside the Admin Header via the Key icon).*
 

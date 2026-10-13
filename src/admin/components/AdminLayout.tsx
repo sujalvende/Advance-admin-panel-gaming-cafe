@@ -8,6 +8,7 @@ import { api } from "../../lib/api";
 import { ConfirmModal } from "../../components/ui/Modal";
 import { useToast } from "../../components/ui/Toast";
 import CredentialsModal from "./CredentialsModal";
+import NotificationBell from "./NotificationBell";
 
 const tabs = [
   { to: "/admin", label: "Bookings", icon: CalendarCheck, end: true },
@@ -88,6 +89,7 @@ export default function AdminLayout() {
               className="hidden"
             />
             <Link to="/" className="btn btn-ghost btn-sm hidden sm:inline-flex">View site</Link>
+            <NotificationBell />
             <button
               type="button"
               className="btn btn-ghost btn-icon"

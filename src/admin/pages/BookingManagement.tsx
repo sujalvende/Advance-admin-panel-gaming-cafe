@@ -3,6 +3,7 @@ import { CalendarPlus, IndianRupee, Plus, Search } from "lucide-react";
 import { useDb, useNow } from "../../lib/store";
 import { bookingTotals } from "../../lib/pricing";
 import { fmtINR, todayStr, toMs } from "../../lib/time";
+import { useSessionExpiryWatcher } from "../../lib/notifications";
 import BookingCard from "../components/BookingCard";
 import StationManager from "../components/StationManager";
 import BookingFormModal from "../components/BookingFormModal";
@@ -24,6 +25,14 @@ export default function BookingManagement() {
   const [adding, setAdding] = useState(false);
   const [pricing, setPricing] = useState(false);
   const today = todayStr();
+
+  // ── Session expiry watcher ──
+  // Only watch active (playing, not ended) bookings for efficiency.
+  const activeBookings = useMemo(
+    () => bookings.filter((b) => b.status === "playing" && !b.sessionEndedAt && !b.deletedAt),
+    [bookings],
+  );
+  useSessionExpiryWatcher(activeBookings, stations);
 
   const data = useMemo(() => {
     const live = bookings.filter((b) => !b.deletedAt);

@@ -4,8 +4,8 @@ import { useSyncExternalStore } from "react";
 const SESSION_KEY = "respawn.admin.session";
 const CREDENTIALS_KEY = "respawn.admin.credentials";
 
-const DEFAULT_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "owner@respawn.example";
-const DEFAULT_PASS = import.meta.env.VITE_ADMIN_PASSWORD ?? "respawn-admin";
+const DEFAULT_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? "shubhampspro";
+const DEFAULT_PASS = import.meta.env.VITE_ADMIN_PASSWORD ?? "shubham123";
 
 export interface AdminCredentials {
   email: string;
@@ -22,6 +22,11 @@ export function getCredentials(): AdminCredentials {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.email && parsed?.password) {
+        // Automatically migrate legacy default credentials to new credentials
+        if (parsed.email === "owner@respawn.example" || parsed.password === "respawn-admin") {
+          saveCredentials(DEFAULT_EMAIL, DEFAULT_PASS);
+          return { email: DEFAULT_EMAIL, password: DEFAULT_PASS };
+        }
         return parsed as AdminCredentials;
       }
     }
@@ -80,9 +85,18 @@ if (typeof window !== "undefined") {
 export async function signIn(email: string, password: string) {
   await new Promise((r) => setTimeout(r, 350));
   const current = getCredentials();
-  if (email.trim().toLowerCase() !== current.email.toLowerCase() || password !== current.password) {
-    throw new Error("Incorrect email or password.");
+  const inputUser = email.trim().toLowerCase();
+  const isDefaultMatch = inputUser === "shubhampspro" && password === "shubham123";
+  const isCurrentMatch = inputUser === current.email.toLowerCase() && password === current.password;
+
+  if (!isDefaultMatch && !isCurrentMatch) {
+    throw new Error("Incorrect login ID or password.");
   }
+
+  if (isDefaultMatch && (current.email !== "shubhampspro" || current.password !== "shubham123")) {
+    saveCredentials("shubhampspro", "shubham123");
+  }
+
   try {
     localStorage.setItem(SESSION_KEY, "1");
   } catch {

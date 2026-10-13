@@ -1,16 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { KeyRound, Sparkles } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { BRAND } from "../../config/brand";
 import logoImg from "../../assets/logo.jpg";
-import { getCredentials, signIn, useAuth } from "../../lib/auth";
+import { signIn, useAuth } from "../../lib/auth";
 import { BusyButton } from "../../components/ui/Modal";
 
 export default function Login() {
   const authed = useAuth();
-  const creds = getCredentials();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -29,13 +29,6 @@ export default function Login() {
     }
   }
 
-  function autofill() {
-    const current = getCredentials();
-    setEmail(current.email);
-    setPassword(current.password);
-    setError("");
-  }
-
   return (
     <div className="grid min-h-dvh place-items-center px-5 py-12">
       <div className="w-full max-w-sm">
@@ -50,31 +43,21 @@ export default function Login() {
         </Link>
 
         <form onSubmit={submit} className="card mt-8 space-y-5 p-6">
-          <div className="flex items-center justify-between">
-            <h1 className="display text-2xl">Staff Sign In</h1>
-            <button
-              type="button"
-              onClick={autofill}
-              className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-1 text-xs font-semibold text-ember hover:bg-ember/20"
-              title="Fill saved credentials"
-            >
-              <Sparkles className="size-3" /> Auto-fill
-            </button>
-          </div>
+          <h1 className="display text-2xl">Staff Sign In</h1>
 
           <div>
-            <label className="label" htmlFor="li-email">
-              Email
+            <label className="label" htmlFor="li-username">
+              Login ID
             </label>
             <input
-              id="li-email"
-              type="email"
+              id="li-username"
+              type="text"
               autoComplete="username"
               required
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin email"
+              placeholder="shubhampspro"
             />
           </div>
 
@@ -82,16 +65,27 @@ export default function Login() {
             <label className="label" htmlFor="li-pass">
               Password
             </label>
-            <input
-              id="li-pass"
-              type="password"
-              autoComplete="current-password"
-              required
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="li-pass"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                className="input pr-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-mute hover:text-bone focus:outline-none transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </div>
 
           {error && <p role="alert" className="text-sm text-bad">{error}</p>}
@@ -100,22 +94,6 @@ export default function Login() {
             Sign in
           </BusyButton>
         </form>
-
-        <div className="mt-5 rounded-2xl border border-dashed border-line p-4 text-xs leading-relaxed text-mute">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-semibold text-bone">
-              <KeyRound className="size-3.5 text-ember" /> Default Admin Credentials:
-            </span>
-          </div>
-          <p className="mt-1.5">
-            Email: <span className="font-mono text-bone">{creds.email}</span>
-            <br />
-            Password: <span className="font-mono text-bone">{creds.password}</span>
-          </p>
-          <p className="mt-2 text-[0.7rem] text-mute/80">
-            For demonstration & trial testing. You can customize credentials anytime from the admin toolbar.
-          </p>
-        </div>
       </div>
     </div>
   );
