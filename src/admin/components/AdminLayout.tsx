@@ -64,9 +64,16 @@ export default function AdminLayout() {
     <div className="min-h-dvh pb-24 md:pb-10">
       <header className="sticky top-0 z-40 border-b border-line bg-ink/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/" className="group flex items-center gap-2.5" title="Go to main website">
-            <span className="display text-2xl transition-colors group-hover:text-ember">{BRAND.name}</span>
-            <span className="rounded-md bg-ember/15 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-ember">Admin</span>
+          <Link to="/" className="group flex items-center gap-3" title="Go to main website">
+            <img
+              src="/logo.jpg"
+              alt="PS PRO Gaming"
+              className="size-9 rounded-lg object-contain shadow-[0_0_10px_rgba(0,200,255,0.3)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_16px_rgba(0,200,255,0.65)]"
+            />
+            <div className="flex items-center gap-2">
+              <span className="display text-xl tracking-tight transition-colors group-hover:text-ember">{BRAND.name}</span>
+              <span className="rounded-md bg-ember/15 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-ember">Admin</span>
+            </div>
           </Link>
           <nav className="hidden items-center gap-1 md:flex" aria-label="Admin">
             {tabs.map((t) => <NavLink key={t.to} to={t.to} end={t.end} className={link}><t.icon className="size-4" />{t.label}</NavLink>)}

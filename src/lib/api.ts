@@ -276,7 +276,7 @@ export const api = {
             if (needed > 0) {
               b.payments.push({
                 id: uid(),
-                type: p.paymentMethod,
+                type: p.paymentMethod!,
                 amount: needed,
                 reference: `Player: ${p.name}`,
                 time: new Date().toISOString(),
@@ -357,6 +357,9 @@ export const api = {
         if (b.players.some((p) => !p.startTime || !p.endTime || Date.parse(p.endTime) < Date.parse(p.startTime)))
           fail("Every player needs valid start and end times.");
         const t = bookingTotals(b, s.rules, s.stations, Date.now());
+        if (t.remaining > 0.01) {
+          fail(`Payment required before submitting: ₹${t.remaining} is still unpaid. Please collect and record full payment first.`);
+        }
         b.finalTotal = t.total;
         const dominantMethod: PayType = t.online >= t.offline ? "online" : "offline";
         const allInfo = allPlayersPaymentInfo(b, s.rules, s.stations, Date.now());

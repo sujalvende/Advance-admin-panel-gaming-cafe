@@ -6,7 +6,7 @@ import { api } from "../../lib/api";
 import { useDb, useNow } from "../../lib/store";
 import { bookingTotals } from "../../lib/pricing";
 import { endClock } from "../../lib/conflicts";
-import { fmtDateLabel, fmtINR, fmtTime, toMs } from "../../lib/time";
+import { fmtClock, fmtDateLabel, fmtINR, fmtTime, toMs } from "../../lib/time";
 import StatusBadge, { PayBadge } from "./StatusBadge";
 import SessionTimer from "./SessionTimer";
 import PlayerList from "./PlayerList";
@@ -15,7 +15,7 @@ import BookingFormModal, { type FormMode } from "./BookingFormModal";
 import { BusyButton, ConfirmModal } from "../../components/ui/Modal";
 import { useToast } from "../../components/ui/Toast";
 
-type Confirm = "noshow" | "delete" | "end" | "submit" | null;
+type Confirm = "noshow" | "delete" | "end" | null;
 
 export default function BookingCard({ booking: b }: { booking: Booking }) {
   const { rules, stations, games } = useDb();
@@ -61,7 +61,10 @@ export default function BookingCard({ booking: b }: { booking: Booking }) {
 
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
           <Meta icon={CalendarClock} label="When" value={`${fmtDateLabel(b.date)}`} />
-          <Meta icon={Clock} label="Time" value={`${fmtTime(b.startTime)} – ${fmtTime(endClock(b))}`} />
+          <Meta icon={Clock} label="Scheduled" value={`${fmtTime(b.startTime)} – ${fmtTime(endClock(b))}`} />
+          {b.sessionStartedAt && (
+            <Meta icon={Clock} label="Actual" value={`${fmtClock(b.sessionStartedAt)} – ${b.sessionEndedAt ? fmtClock(b.sessionEndedAt) : "running"}`} />
+          )}
           <Meta icon={Gamepad2} label="Station" value={station?.name.replace(" · ", " ") ?? "—"} />
           <Meta icon={Users} label="Players" value={`${b.players.length}`} />
           <Meta label="Game" value={game?.title ?? "Not decided"} />
@@ -97,10 +100,43 @@ export default function BookingCard({ booking: b }: { booking: Booking }) {
             {b.status === "pending" && <BusyButton busy={busy} className="btn btn-primary btn-lg flex-1" onClick={() => act(() => api.setStatus(b.id, "confirmed"), "Booking confirmed")}><CheckCircle2 className="size-5" /> Confirm</BusyButton>}
             {pre && <BusyButton busy={busy} className={`btn btn-lg flex-1 ${b.status === "pending" ? "btn-soft" : "btn-primary"}`} onClick={() => act(() => api.startSession(b.id), "Session started")}><Play className="size-5" /> Start Session</BusyButton>}
             {running && <BusyButton busy={busy} className="btn btn-primary btn-lg flex-1" onClick={() => setConfirm("end")}><Square className="size-5" /> End Session</BusyButton>}
-            {ended && (<>
-              <button type="button" className="btn btn-primary btn-lg flex-1" onClick={() => setPay(true)}><Wallet className="size-5" /> Add Payment</button>
-              <BusyButton busy={busy} className={`btn btn-lg flex-1 ${t.remaining <= 0 ? "btn-ok" : "btn-soft"}`} onClick={() => (t.remaining > 0 ? setConfirm("submit") : act(() => api.submit(b.id), "Session completed"))}>Submit</BusyButton>
-            </>)}
+            {ended && (
+              t.remaining > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-lg flex-1 shadow-[0_0_15px_rgba(255,106,61,0.25)]"
+                    onClick={() => setPay(true)}
+                  >
+                    <Wallet className="size-5" /> Add Payment ({fmtINR(t.remaining)} due)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-soft btn-lg flex-1 cursor-not-allowed opacity-60"
+                    onClick={() => {
+                      toast("error", `Payment of ${fmtINR(t.remaining)} is required before submitting the session.`);
+                      setPay(true);
+                    }}
+                    title={`Collect remaining ${fmtINR(t.remaining)} before submitting session`}
+                  >
+                    <Lock className="size-4" /> Submit Locked
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="btn btn-ghost btn-lg" onClick={() => setPay(true)}>
+                    <Wallet className="size-5" /> Payments
+                  </button>
+                  <BusyButton
+                    busy={busy}
+                    className="btn btn-ok btn-lg flex-1"
+                    onClick={() => act(() => api.submit(b.id), "Session completed · Saved to History")}
+                  >
+                    <CheckCircle2 className="size-5" /> Submit Session
+                  </BusyButton>
+                </>
+              )
+            )}
           </div>
         )}
       </div>
@@ -135,8 +171,6 @@ export default function BookingCard({ booking: b }: { booking: Booking }) {
         body="This removes it from active bookings. It is archived, not erased, so it can be restored from the database." onConfirm={async () => { await act(() => api.archive(b.id), "Booking deleted"); setConfirm(null); }} />
       <ConfirmModal open={confirm === "end"} onClose={() => setConfirm(null)} title="End this session?" confirmLabel="End session"
         body="Everyone still playing is stopped now and each player's charge is calculated. You can fix times afterwards." onConfirm={async () => { await act(() => api.endSession(b.id), "Session ended · add payment"); setConfirm(null); }} />
-      <ConfirmModal open={confirm === "submit"} onClose={() => setConfirm(null)} title="Submit with a balance due?" confirmLabel="Submit anyway"
-        body={`${fmtINR(t.remaining)} is still unpaid. The record is locked in History as partially paid.`} onConfirm={async () => { await act(() => api.submit(b.id), "Session completed"); setConfirm(null); }} />
     </article>
   );
 }

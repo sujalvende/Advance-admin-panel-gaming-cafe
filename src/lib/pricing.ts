@@ -19,9 +19,32 @@ export function effectiveRate(rule: PricingRule | undefined, playerCount: number
   return rule.groupRate != null && playerCount >= rule.groupMinPlayers ? rule.groupRate : rule.rate;
 }
 
+/**
+ * True elapsed duration of the booking SESSION (start → end, minus paused time).
+ * Use this to display "Session Duration" in the dashboard.
+ * Falls back to `durationMin` (the scheduled slot) when actual timestamps are unavailable.
+ */
+export function sessionDurationMinutes(b: Booking, now: number): number {
+  if (b.sessionStartedAt) {
+    const end = b.sessionEndedAt
+      ? Date.parse(b.sessionEndedAt)
+      : b.pausedAt
+        ? Date.parse(b.pausedAt)
+        : now;
+    const raw = end - Date.parse(b.sessionStartedAt) - (b.pausedMs ?? 0);
+    return Math.max(0, Math.floor(raw / 60000));
+  }
+  return b.durationMin; // scheduled duration as fallback
+}
+
+/**
+ * Elapsed minutes for an individual player.
+ * Uses Math.floor consistently to avoid players with sub-second
+ * timestamp offsets displaying different durations at the same HH:MM.
+ */
 export function playerMinutes(b: Booking, p: Player, now: number) {
   if (p.startTime && p.endTime) {
-    return Math.max(0, Math.round((Date.parse(p.endTime) - Date.parse(p.startTime)) / 60000));
+    return Math.max(0, Math.floor((Date.parse(p.endTime) - Date.parse(p.startTime)) / 60000));
   }
   if (p.startTime && b.sessionStartedAt && !b.sessionEndedAt) {
     const ref = b.pausedAt ? Date.parse(b.pausedAt) : now;
@@ -49,7 +72,10 @@ export interface Totals {
   paid: number;
   remaining: number;
   overpaid: number;
+  /** Sum of every player's individual playing time (for billing & analytics). */
   playerMinutes: number;
+  /** True elapsed session time from sessionStartedAt → sessionEndedAt. Use this for "Session Duration" display. */
+  sessionDuration: number;
   status: "unpaid" | "partial" | "paid" | "refunded";
 }
 
@@ -83,6 +109,7 @@ export function bookingTotals(
     overpaid,
     status,
     playerMinutes: b.players.reduce((s, p) => s + playerMinutes(b, p, now), 0),
+    sessionDuration: sessionDurationMinutes(b, now),
   };
 }
 
